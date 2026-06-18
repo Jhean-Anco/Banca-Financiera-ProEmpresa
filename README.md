@@ -42,7 +42,7 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_fymmXEWgkQSdaXe-F3_8OA_QK6ZOnCe
 npm run dev
 ```
 
-Abrir: **http://localhost:5173**
+Abrir: **http://localhost:5173/login**
 
 Build producción:
 
@@ -53,16 +53,15 @@ npm run preview
 
 ## Login y credenciales (docente)
 
-La web **no tiene pantalla de login**. La sesión está fijada como **supervisor** en
-`src/components/Layout.jsx` para la demo académica.
+Pantalla de login en **`/login`** (Supabase Auth). Botón **Rellenar credenciales demo** incluido.
 
-| Usuario en pantalla | Rol | Contraseña |
-|---------------------|-----|------------|
-| Carlos Ramírez | **Supervisor** | *(no aplica — sin login)* |
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| **Supervisor** (web) | `supervisor@pichincha.com` | `Docente2025!` |
 
-Acciones disponibles: **Aprobar** / **Rechazar** en la página **Solicitudes**.
+Tras ingresar → **Solicitudes** → **Aprobar** / **Rechazar**.
 
-Credenciales completas de las 3 apps (cliente, asesor móvil, supervisor): ver
+Tabla completa de las **3 aplicaciones** (cliente, asesor móvil, supervisor web):
 **[CREDENCIALES_DEMO.md](./CREDENCIALES_DEMO.md)**.
 
 ## SQL en Supabase (antes de la demo)

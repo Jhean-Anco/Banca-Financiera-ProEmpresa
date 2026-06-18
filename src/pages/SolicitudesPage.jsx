@@ -11,8 +11,7 @@ import {
 const ESTADOS_FINALES = ['aprobado', 'desembolsado', 'rechazado'];
 
 export default function SolicitudesPage() {
-  const { user } = useOutletContext();
-  const puedeAprobar = user?.rol === 'supervisor' || user?.rol === 'admin';
+  const { user, puedeAprobar } = useOutletContext();
 
   const [rows, setRows] = useState([]);
   const [syncLog, setSyncLog] = useState([]);

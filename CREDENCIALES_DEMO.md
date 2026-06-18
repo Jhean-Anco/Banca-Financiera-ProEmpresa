@@ -1,8 +1,107 @@
-# Credenciales y roles — Demo docente
+# Credenciales demo — Banco Pichincha (3 aplicaciones)
 
 Proyecto Supabase compartido: `https://uomaqpphyouzbnestbba.supabase.co`
 
-## Scripts SQL (orden en Supabase → SQL Editor)
+> Si ya ejecutaste `03_usuarios_demo_docente.sql` y creaste los usuarios en **Supabase Auth**, usa las credenciales de la tabla siguiente.
+
+---
+
+## Tabla resumen (usuario y contraseña)
+
+| # | Aplicación | Rol | Usuario | Contraseña | Qué puede hacer |
+|---|------------|-----|---------|------------|-----------------|
+| 1 | **App Cliente** (`banco_pichincha`) | Cliente | DNI **`40118120`** | **`Docente2025!`** *(al registrarse)* | Solicitar crédito, ver cuentas y créditos |
+| 2 | **App Asesor Ventas** (Flutter FV) | Asesor | **`asesor@pichincha.com`** | **`Docente2025!`** | Cartera, ruta, aceptar solicitud, enviar a comité |
+| 2b | **App Asesor Ventas** (modo demo) | Asesor | **`demo@pichincha.com`** | **`pichincha123`** | Igual que asesor, sin Supabase Auth |
+| 3 | **Web Fuerza de Ventas** | Supervisor | **`supervisor@pichincha.com`** | **`Docente2025!`** | Aprobar / rechazar solicitudes |
+
+---
+
+## 1. App Cliente — `banco_pichincha`
+
+| Campo | Valor |
+|-------|--------|
+| **Nombre app** | Banco Pichincha |
+| **Tipo de login** | DNI + contraseña |
+| **Usuario (Caso 1)** | DNI `40118120` |
+| **Nombre cliente** | Anaximandro Quispe |
+| **Contraseña sugerida** | `Docente2025!` |
+
+**Pasos:** Registrarse en la app con esos datos → **Contratar** → solicitar crédito (ej. S/1000).
+
+**Repo:** https://github.com/Ivan-1926/APP_TEORIA_PICHINCHA
+
+---
+
+## 2. App móvil Fuerza de Ventas — `APP_Fuerza _De_Venta`
+
+| Campo | Valor |
+|-------|--------|
+| **Nombre app** | Asesor Ventas |
+| **Tipo de login** | Correo + contraseña (Supabase Auth) |
+
+### Login real (asesor)
+
+| Usuario | Contraseña |
+|---------|------------|
+| `asesor@pichincha.com` | `Docente2025!` |
+
+Botón en login: **Ingresar como asesor (Supabase)** o escribir manualmente.
+
+### Modo demo offline
+
+| Usuario | Contraseña |
+|---------|------------|
+| `demo@pichincha.com` | `pichincha123` |
+
+Botón: **Modo Demo**.
+
+**Repo:** https://github.com/Ivan-1926/Teoria_Fuerza_de_venta
+
+---
+
+## 3. Web supervisor — `fuerza-ventas-web`
+
+| Campo | Valor |
+|-------|--------|
+| **URL local** | http://localhost:5173/login |
+| **Tipo de login** | Correo + contraseña (Supabase Auth) |
+
+### Login supervisor (aprobar / rechazar)
+
+| Usuario | Contraseña |
+|---------|------------|
+| `supervisor@pichincha.com` | `Docente2025!` |
+
+Tras ingresar → menú **Solicitudes** → **Aprobar** / **Rechazar**.
+
+Botón en login: **Rellenar credenciales demo**.
+
+**Arranque:**
+
+```powershell
+cd fuerza-ventas-web
+npm install
+copy .env.example .env
+npm run dev
+```
+
+**Repo:** https://github.com/Ivan-1926/web_fuerza_de_venta
+
+---
+
+## Roles (RBAC)
+
+| Rol | App | Permisos |
+|-----|-----|----------|
+| **cliente** | App Cliente | Crear solicitud de crédito |
+| **asesor** | App móvil FV | Ver cartera, aceptar solicitud, enviar a comité |
+| **supervisor** | Web FV | Aprobar / rechazar solicitudes |
+| **admin** | Web / BD | Igual que supervisor |
+
+---
+
+## Scripts SQL (orden)
 
 | # | Archivo | Repo |
 |---|---------|------|
@@ -13,71 +112,18 @@ Proyecto Supabase compartido: `https://uomaqpphyouzbnestbba.supabase.co`
 | 5 | `supabase/03_fix_registro.sql` | banco_pichincha |
 | 6 | `supabase/04_cliente_solicitud_credito.sql` | banco_pichincha |
 
-En **Authentication → Providers**: desactivar confirmación de email (desarrollo).
+**Supabase Auth → Users** (crear manualmente):
+
+- `supervisor@pichincha.com` / `Docente2025!`
+- `asesor@pichincha.com` / `Docente2025!`
+
+Desactivar confirmación de email en desarrollo.
 
 ---
 
-## Credenciales por aplicación
+## Flujo demo Caso 1
 
-### 1. Web supervisor (`fuerza-ventas-web`)
-
-| Campo | Valor |
-|-------|--------|
-| **Login** | No hay pantalla de login (sesión demo fija) |
-| **Usuario mostrado** | Carlos Ramírez — **Supervisor** |
-| **Acciones** | Aprobar / Rechazar en **Solicitudes** |
-| **URL local** | http://localhost:5173 |
-
-Requisitos: Node.js LTS, `npm install`, archivo `.env` (ver README).
-
----
-
-### 2. App móvil Fuerza de Ventas (`APP_Fuerza _De_Venta`)
-
-| Email | Contraseña | Rol | Uso |
-|-------|------------|-----|-----|
-| `demo@pichincha.com` | `pichincha123` | **asesor** | Demo rápida (botón en login). Aceptar solicitudes y enviar a comité. |
-| `asesor@pichincha.com` | `Docente2025!` | **asesor** | Tras crear usuario en Supabase Auth + script SQL |
-| `supervisor@pichincha.com` | `Docente2025!` | **supervisor** | Solo si inicia sesión en móvil; en demo normal el supervisor usa la **web** |
-
----
-
-### 3. App cliente (`banco_pichincha`)
-
-| Campo | Valor Caso 1 (PDF) |
-|-------|---------------------|
-| **Registro** | DNI `40118120`, nombre **Anaximandro Quispe**, correo y clave libres |
-| **Login** | **DNI** `40118120` + la contraseña elegida al registrarse |
-| **Sugerido docente** | Clave `Docente2025!` al registrar el Caso 1 |
-
-Flujo: **Contratar** → producto crédito → monto S/1000 (o el del caso).
-
----
-
-## Roles (RBAC)
-
-| Rol | Dónde | Permisos demo |
-|-----|--------|----------------|
-| **cliente** | App banco_pichincha | Crear solicitud de crédito |
-| **asesor** | App móvil FV | Cartera, ruta, buró, **aceptar** solicitud, **enviar a comité** |
-| **supervisor** | Web FV | **Aprobar** / **Rechazar** solicitudes |
-| **admin** | BD (opcional) | Igual que supervisor en políticas RLS |
-
----
-
-## Flujo demo Caso 1 (8 pasos resumidos)
-
-1. Cliente (`40118120`) solicita crédito en app cliente.
-2. Asesor (`demo@pichincha.com`) ve solicitud → **Aceptar** → **Enviar a comité**.
-3. Supervisor abre web → **Solicitudes** → **Aprobar**.
-4. Cliente refresca inicio → aparece crédito (vía `sync_outbox`).
-
----
-
-## Repositorios GitHub
-
-| App | Repo |
-|-----|------|
-| Cliente | https://github.com/Ivan-1926/APP_TEORIA_PICHINCHA |
-| Fuerza de Ventas (Flutter) | https://github.com/Ivan-1926/Teoria_Fuerza_de_venta |
-| Web supervisor | https://github.com/Ivan-1926/web_fuerza_de_venta |
+1. **Cliente** (`40118120`) solicita crédito en app cliente.
+2. **Asesor** (`asesor@pichincha.com` o demo) acepta y envía a comité en app móvil.
+3. **Supervisor** (`supervisor@pichincha.com`) aprueba en la web.
+4. **Cliente** refresca inicio → aparece el crédito (E2E vía `sync_outbox`).

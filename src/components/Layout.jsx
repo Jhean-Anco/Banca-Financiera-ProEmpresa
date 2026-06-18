@@ -2,12 +2,16 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LiveClock } from './Ui';
 import { navItems } from '../config/theme';
 import { isSupabaseConfigured } from '../lib/supabase';
-
-// RBAC: el supervisor puede aprobar/rechazar solicitudes (Criterio 4).
-const USER = { name: 'Carlos Ramírez', role: 'Supervisor', rol: 'supervisor', initials: 'CR' };
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const navigate = useNavigate();
+  const { user, logout, puedeAprobar } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="app-shell">
@@ -30,11 +34,17 @@ export default function Layout() {
         </div>
         <LiveClock />
         <div className="top-bar__user">
-          <div className="top-bar__avatar">{USER.initials}</div>
+          <div className="top-bar__avatar">{user?.initials ?? 'FV'}</div>
           <div className="top-bar__user-info">
-            <div className="top-bar__user-name">{USER.name}</div>
-            <div className="top-bar__user-role">{USER.role}</div>
+            <div className="top-bar__user-name">{user?.name ?? 'Usuario'}</div>
+            <div className="top-bar__user-role">
+              {user?.role ?? '—'}
+              {!puedeAprobar && ' · sin permiso de aprobación'}
+            </div>
           </div>
+          <button type="button" className="top-bar__logout" onClick={handleLogout} title="Cerrar sesión">
+            Salir
+          </button>
         </div>
       </header>
 
@@ -54,7 +64,7 @@ export default function Layout() {
       </nav>
 
       <main className="main-content">
-        <Outlet context={{ user: USER, navigate }} />
+        <Outlet context={{ user, navigate, puedeAprobar }} />
       </main>
     </div>
   );

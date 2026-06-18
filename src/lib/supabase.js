@@ -107,6 +107,144 @@ export async function fetchSyncLog(limit = 8) {
   return data ?? [];
 }
 
+// ─── AUTH (login web supervisor / asesor) ───────────────────────────────────
+
+const KNOWN_PROFILES = {
+  'supervisor@pichincha.com': {
+    nombres: 'María',
+    apellidos: 'Supervisor',
+    rol: 'supervisor',
+    perfil: 'Supervisor de Crédito',
+  },
+  'asesor@pichincha.com': {
+    nombres: 'Carlos',
+    apellidos: 'Mendoza',
+    rol: 'asesor',
+    perfil: 'Oficial de Crédito Principal',
+  },
+};
+
+function buildUser(email, profile, authId) {
+  const name = `${profile.nombres} ${profile.apellidos}`.trim();
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+  return {
+    id: authId || email,
+    email,
+    name,
+    role: profile.rol === 'supervisor' ? 'Supervisor' : 'Asesor',
+    rol: profile.rol,
+    perfil: profile.perfil,
+    initials: initials || 'FV',
+  };
+}
+
+async function fetchAdvisorProfileByEmail(email) {
+  const clean = email.trim().toLowerCase();
+  if (!clean) return null;
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('asesores_negocio')
+        .select('nombres, apellidos, rol, perfil, activo, email')
+        .ilike('email', clean)
+        .maybeSingle();
+      if (!error && data && data.activo !== false) {
+        return {
+          nombres: data.nombres || '',
+          apellidos: data.apellidos || '',
+          rol: data.rol || 'asesor',
+          perfil: data.perfil || '',
+        };
+      }
+    } catch (e) {
+      console.warn('[Supabase] perfil asesor:', e.message);
+    }
+  }
+
+  return KNOWN_PROFILES[clean] || null;
+}
+
+export async function getSessionUser() {
+  if (!supabase) {
+    const raw = sessionStorage.getItem('fv_web_mock_user');
+    return raw ? JSON.parse(raw) : null;
+  }
+  const { data } = await supabase.auth.getSession();
+  const session = data?.session;
+  if (!session?.user?.email) return null;
+  const profile = await fetchAdvisorProfileByEmail(session.user.email);
+  if (!profile) return null;
+  return buildUser(session.user.email, profile, session.user.id);
+}
+
+export function subscribeAuthChanges(callback) {
+  if (!supabase) return () => {};
+  const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (!session?.user?.email) {
+      callback(null);
+      return;
+    }
+    const profile = await fetchAdvisorProfileByEmail(session.user.email);
+    callback(profile ? buildUser(session.user.email, profile, session.user.id) : null);
+  });
+  return () => data.subscription.unsubscribe();
+}
+
+export async function signInAdvisor(email, password) {
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!supabase) {
+    if (
+      cleanEmail === 'supervisor@pichincha.com' &&
+      password === 'Docente2025!'
+    ) {
+      const user = buildUser(cleanEmail, KNOWN_PROFILES[cleanEmail], 'mock-supervisor');
+      sessionStorage.setItem('fv_web_mock_user', JSON.stringify(user));
+      return { ok: true, user };
+    }
+    if (cleanEmail === 'asesor@pichincha.com' && password === 'Docente2025!') {
+      const user = buildUser(cleanEmail, KNOWN_PROFILES[cleanEmail], 'mock-asesor');
+      sessionStorage.setItem('fv_web_mock_user', JSON.stringify(user));
+      return { ok: true, user };
+    }
+    return { ok: false, error: 'Credenciales inválidas (modo demo sin Supabase).' };
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: cleanEmail,
+    password,
+  });
+  if (error) {
+    const msg = error.message.toLowerCase().includes('invalid')
+      ? 'Correo o contraseña incorrectos.'
+      : error.message;
+    return { ok: false, error: msg };
+  }
+
+  const profile = await fetchAdvisorProfileByEmail(data.user.email);
+  if (!profile) {
+    await supabase.auth.signOut();
+    return {
+      ok: false,
+      error:
+        'Perfil no encontrado en asesores_negocio. Ejecuta 03_usuarios_demo_docente.sql.',
+    };
+  }
+
+  return { ok: true, user: buildUser(data.user.email, profile, data.user.id) };
+}
+
+export async function signOutAdvisor() {
+  sessionStorage.removeItem('fv_web_mock_user');
+  if (supabase) await supabase.auth.signOut();
+}
+
 // ─── MOCKS (sólo si no hay .env configurado) ─────────────────────────────────
 
 function getMockKpis() {
