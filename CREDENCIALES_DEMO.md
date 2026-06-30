@@ -1,139 +1,35 @@
-# Credenciales demo — Banco Pichincha (3 aplicaciones)
+# Credenciales demo - Caja ICA
 
-Proyecto Supabase compartido: `https://uomaqpphyouzbnestbba.supabase.co`
+## SQL unico
 
-> Si ya ejecutaste `03_usuarios_demo_docente.sql` y creaste los usuarios en **Supabase Auth**, usa las credenciales de la tabla siguiente.
+Ejecutar solo estos tres scripts desde `supabase_unified`:
 
----
+1. `00_reset_database.sql`
+2. `01_create_database.sql`
+3. `02_seed_data.sql`
 
-## Tabla resumen (usuario y contraseña)
+No ejecutar scripts SQL dentro de las apps. Fueron eliminados y consolidados.
 
-| # | Aplicación | Rol | Usuario | Contraseña | Qué puede hacer |
-|---|------------|-----|---------|------------|-----------------|
-| 1 | **App Cliente** (`banco_pichincha`) | Cliente | DNI **`40118120`** | **`Docente2025!`** *(al registrarse)* | Solicitar crédito, ver cuentas y créditos |
-| 2 | **App Asesor Ventas** (Flutter FV) | Asesor | **`asesor@pichincha.com`** | **`Docente2025!`** | Cartera, ruta, aceptar solicitud, enviar a comité |
-| 2b | **App Asesor Ventas** (modo demo) | Asesor | **`demo@pichincha.com`** | **`pichincha123`** | Igual que asesor, sin Supabase Auth |
-| 3 | **Web Fuerza de Ventas** | Supervisor | **`supervisor@pichincha.com`** | **`Docente2025!`** | Aprobar / rechazar solicitudes |
+## Usuarios
 
----
+Todos usan la contrasena `Docente2025!`.
 
-## 1. App Cliente — `banco_pichincha`
+| Aplicacion | Rol | Usuario | Documento |
+| --- | --- | --- | --- |
+| App Cliente | Cliente | `cliente@cajaica.com` | `72345678` |
+| App Cliente | Cliente | `cliente2@cajaica.com` | `73456789` |
+| App trabajador | Asesor | `asesor@cajaica.com` | - |
+| App trabajador | Asesor | `asesor2@cajaica.com` | - |
+| Web administrador | Supervisor | `supervisor@cajaica.com` | - |
+| Web administrador | Admin | `admin@cajaica.com` | - |
 
-| Campo | Valor |
-|-------|--------|
-| **Nombre app** | Banco Pichincha |
-| **Tipo de login** | DNI + contraseña |
-| **Usuario (Caso 1)** | DNI `40118120` |
-| **Nombre cliente** | Anaximandro Quispe |
-| **Contraseña sugerida** | `Docente2025!` |
+## Flujo demo
 
-**Pasos:** Registrarse en la app con esos datos → **Contratar** → solicitar crédito (ej. S/1000).
-
-**Repo:** https://github.com/Ivan-1926/APP_TEORIA_PICHINCHA
-
----
-
-## 2. App móvil Fuerza de Ventas — `APP_Fuerza _De_Venta`
-
-| Campo | Valor |
-|-------|--------|
-| **Nombre app** | Asesor Ventas |
-| **Tipo de login** | Correo + contraseña (Supabase Auth) |
-
-### Login real (asesor)
-
-| Usuario | Contraseña |
-|---------|------------|
-| `asesor@pichincha.com` | `Docente2025!` |
-
-Botón en login: **Ingresar como asesor (Supabase)** o escribir manualmente.
-
-### Modo demo offline
-
-| Usuario | Contraseña |
-|---------|------------|
-| `demo@pichincha.com` | `pichincha123` |
-
-Botón: **Modo Demo**.
-
-**Repo:** https://github.com/Ivan-1926/Teoria_Fuerza_de_venta
-
----
-
-## 3. Web supervisor — `fuerza-ventas-web`
-
-| Campo | Valor |
-|-------|--------|
-| **URL local** | http://localhost:5173/login |
-| **Tipo de login** | Correo + contraseña (Supabase Auth) |
-
-### Login supervisor (aprobar / rechazar)
-
-| Usuario | Contraseña |
-|---------|------------|
-| `supervisor@pichincha.com` | `Docente2025!` |
-
-Tras ingresar → menú **Solicitudes** → **Aprobar** / **Rechazar**.
-
-Botón en login: **Rellenar credenciales demo**.
-
-**Arranque:**
-
-```powershell
-cd fuerza-ventas-web
-npm install
-copy .env.example .env
-npm run dev
-```
-
-**Repo:** https://github.com/Ivan-1926/web_fuerza_de_venta
-
----
-
-## Roles (RBAC)
-
-| Rol | App | Permisos |
-|-----|-----|----------|
-| **cliente** | App Cliente | Crear solicitud de crédito |
-| **asesor** | App móvil FV | Ver cartera, aceptar solicitud, enviar a comité |
-| **supervisor** | Web FV | Aprobar / rechazar solicitudes |
-| **admin** | Web / BD | Igual que supervisor |
-
----
-
-## Scripts SQL (orden)
-
-| # | Archivo | Repo |
-|---|---------|------|
-| 1 | `supabase/schema_and_seed.sql` | APP_Fuerza _De_Venta |
-| 2 | `supabase/02_rubrica_integracion.sql` | APP_Fuerza _De_Venta |
-| 3 | `supabase/03_usuarios_demo_docente.sql` | APP_Fuerza _De_Venta |
-| **4** | **`supabase/04_auth_usuarios_demo.sql`** | **APP_Fuerza _De_Venta — OBLIGATORIO para login** |
-| **5** | **`supabase/05_ruta_demo_asesor.sql`** | **APP_Fuerza _De_Venta — visitas en pestaña Ruta** |
-| 6 | `supabase/02_rubrica_integracion.sql` | banco_pichincha |
-| 5 | `supabase/02_rubrica_integracion.sql` | banco_pichincha |
-| 6 | `supabase/03_fix_registro.sql` | banco_pichincha |
-| 7 | `supabase/04_cliente_solicitud_credito.sql` | banco_pichincha |
-
-### Si el login dice "correo o contraseña incorrectos"
-
-1. En Supabase → **Authentication → Providers → Email**: desactiva **Confirm email**.
-2. Ejecuta **`04_auth_usuarios_demo.sql`** en SQL Editor (parchea trigger + crea usuarios Auth).
-3. Debe mostrar **2 filas** en la verificación final (asesor + supervisor).
-4. Ejecuta **`05_ruta_demo_asesor.sql`** para ver la ruta en la app móvil.
-5. Vuelve a intentar login:
-   - Asesor móvil / web asesor: `asesor@pichincha.com` / `Docente2025!`
-   - Supervisor web: `supervisor@pichincha.com` / `Docente2025!`
-
-**Alternativa manual:** Authentication → Users → Add user (mismos correos y contraseña).
-
-**Modo demo móvil (sin Auth):** `demo@pichincha.com` / `pichincha123`
-
----
-
-## Flujo demo Caso 1
-
-1. **Cliente** (`40118120`) solicita crédito en app cliente.
-2. **Asesor** (`asesor@pichincha.com` o demo) acepta y envía a comité en app móvil.
-3. **Supervisor** (`supervisor@pichincha.com`) aprueba en la web.
-4. **Cliente** refresca inicio → aparece el crédito (E2E vía `sync_outbox`).
+1. Cliente entra con DNI `72345678` y solicita un prestamo.
+2. Supervisor web valida y asigna un asesor.
+3. La app del asesor muestra la solicitud, visita y ficha.
+4. El asesor envia a comite.
+5. Supervisor aprueba o rechaza desde web.
+6. Si aprueba, la solicitud queda `desembolsado`.
+7. App cliente procesa `sync_outbox` y muestra credito, cuotas, movimiento,
+   saldo y notificacion.

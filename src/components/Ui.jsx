@@ -33,7 +33,7 @@ export function LiveClock() {
 }
 
 function formatTime(d) {
-  return d.toLocaleTimeString('es-EC', {
+  return d.toLocaleTimeString('es-PE', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -93,16 +93,16 @@ export function EstadoBadge({ estado }) {
   const cls =
     e === 'aprobado' || e === 'desembolsado'
       ? 'badge--aprobado'
-      : e === 'enviado' || e === 'comite'
+      : e === 'enviado' || e === 'en_evaluacion' || e === 'comite'
         ? 'badge--enviado'
         : 'badge--pendiente';
   return <span className={`badge ${cls}`}>{estado}</span>;
 }
 
 export function formatMoney(n) {
-  return new Intl.NumberFormat('es-EC', {
+  return new Intl.NumberFormat('es-PE', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PEN',
     minimumFractionDigits: 2,
   }).format(n ?? 0);
 }

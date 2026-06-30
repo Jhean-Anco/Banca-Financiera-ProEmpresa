@@ -7,96 +7,26 @@ export const isSupabaseConfigured =
   url &&
   key &&
   url !== 'https://tu-proyecto.supabase.co' &&
-  !key.includes('tu-anon') &&
-  !key.includes('tu-anon-key');
+  !key.includes('tu-anon');
 
 export const supabase = isSupabaseConfigured ? createClient(url, key) : null;
 
-// =============================================================================
-// SINCRONIZACIÓN: la web usa las MISMAS tablas que las apps Flutter
-//   • Cartera        → public.fv_clients
-//   • Solicitudes    → public.fv_credit_applications
-//   • Trazabilidad   → public.sync_log (puente E2E hacia la app cliente)
-// Mismo proyecto Supabase: uomaqpphyouzbnestbba.supabase.co
-// =============================================================================
-
-/** KPIs del dashboard calculados desde las tablas unificadas. */
 export async function fetchDashboardKpis() {
-  if (!supabase) return getMockKpis();
+  if (!supabase) return getEmptyKpis();
   try {
-    const [appsRes, clientsRes] = await Promise.all([
-      supabase.from('fv_credit_applications').select('status, amount, submitted_at'),
-      supabase.from('fv_clients').select('id, days_overdue'),
-    ]);
-    const apps = appsRes.data ?? [];
-    const clients = clientsRes.data ?? [];
-    const aprobadas = apps.filter((a) =>
-      ['aprobado', 'desembolsado'].includes((a.status || '').toLowerCase())
-    ).length;
-    return {
-      visitas_pendientes: clients.filter((c) => (c.days_overdue ?? 0) > 0).length,
-      visitas_total_cartera: clients.length,
-      gestionadas_hoy: apps.length,
-      monto_cartera: apps.reduce((s, a) => s + Number(a.amount || 0), 0),
-      solicitudes_aprobadas: aprobadas,
-      solicitudes_mes: apps.length,
-    };
+    const { data, error } = await supabase.from('v_dashboard_kpis').select('*').maybeSingle();
+    if (error) throw error;
+    return data ?? getEmptyKpis();
   } catch (e) {
     console.warn('[Supabase]', e.message);
-    return getMockKpis();
+    return getEmptyKpis();
   }
 }
 
-/** Cartera de clientes (tabla clients, compartida con app FV). */
 export async function fetchCartera(limit = 100) {
-  if (!supabase) return getMockCartera();
-  const { data, error } = await supabase
-    .from('fv_clients')
-    .select('*')
-    .order('name', { ascending: true })
-    .limit(limit);
-  if (error) {
-    console.warn('[Supabase]', error.message);
-    return getMockCartera();
-  }
-  return data ?? [];
-}
-
-/** Solicitudes de crédito (originadas en app cliente o app FV). */
-export async function fetchSolicitudes(limit = 100) {
-  if (!supabase) return getMockSolicitudes();
-  const { data, error } = await supabase
-    .from('fv_credit_applications')
-    .select('*')
-    .order('submitted_at', { ascending: false })
-    .limit(limit);
-  if (error) {
-    console.warn('[Supabase]', error.message);
-    return getMockSolicitudes();
-  }
-  return data ?? [];
-}
-
-/**
- * Aprueba o rechaza una solicitud. Al aprobar, el trigger
- * `trg_fv_publicar_aprobacion` publica el evento en `sync_outbox` y la app
- * cliente refleja el crédito (integración End-to-End).
- */
-export async function actualizarEstadoSolicitud(id, estado) {
-  if (!supabase) return { ok: false, demo: true };
-  const { error } = await supabase
-    .from('fv_credit_applications')
-    .update({ status: estado, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-/** Trazabilidad del puente E2E (eventos publicados hacia la app cliente). */
-export async function fetchSyncLog(limit = 8) {
   if (!supabase) return [];
   const { data, error } = await supabase
-    .from('sync_log')
+    .from('fv_clients')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -104,25 +34,167 @@ export async function fetchSyncLog(limit = 8) {
     console.warn('[Supabase]', error.message);
     return [];
   }
-  return data ?? [];
+  return (data ?? []).map(mapCliente);
 }
 
-// ─── AUTH (login web supervisor / asesor) ───────────────────────────────────
+export async function fetchSolicitudes(limit = 100) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('solicitudes_credito')
+    .select('*')
+    .order('submitted_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn('[Supabase]', error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => mapSolicitud(r));
+}
 
-const KNOWN_PROFILES = {
-  'supervisor@pichincha.com': {
-    nombres: 'María',
-    apellidos: 'Supervisor',
-    rol: 'supervisor',
-    perfil: 'Supervisor de Crédito',
-  },
-  'asesor@pichincha.com': {
-    nombres: 'Carlos',
-    apellidos: 'Mendoza',
-    rol: 'asesor',
-    perfil: 'Oficial de Crédito Principal',
-  },
-};
+export async function actualizarEstadoSolicitud(id, estado) {
+  if (!supabase) return { ok: false, error: 'Sin conexión a Supabase.' };
+  const dbEstado = estado === 'aprobado' ? 'desembolsado' : estado;
+  const { error } = await supabase
+    .from('solicitudes_credito')
+    .update({ estado: dbEstado, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function fetchAdvisors() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, nombres, apellidos, email')
+    .eq('rol', 'asesor');
+  if (error) {
+    console.warn('[Supabase]', error.message);
+    return [];
+  }
+  return (data ?? []).map((row) => ({
+    ...row,
+    nombre: `${row.nombres || ''} ${row.apellidos || ''}`.trim() || row.email,
+  }));
+}
+
+export async function asignarAsesorASolicitud(solicitudId, asesorId) {
+  if (!supabase) return { ok: false, error: 'Sin conexión a Supabase.' };
+  const { error } = await supabase
+    .from('solicitudes_credito')
+    .update({ 
+      asesor_id: asesorId, 
+      estado: 'en_evaluacion', 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', solicitudId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function fetchExpedienteSolicitud(solicitud) {
+  if (!supabase || !solicitud) return emptyExpediente();
+  const filters = [
+    solicitud.id ? `solicitud_id.eq.${solicitud.id}` : '',
+    solicitud.client_id ? `client_id.eq.${solicitud.client_id}` : '',
+    solicitud.client_dni ? `dni.eq.${solicitud.client_dni}` : '',
+  ].filter(Boolean).join(',');
+
+  try {
+    const [fichaRes, docsRes] = await Promise.all([
+      supabase
+        .from('fv_fichas_campo')
+        .select('*')
+        .eq('solicitud_id', solicitud.id)
+        .maybeSingle(),
+      filters
+        ? supabase
+            .from('fv_documentos')
+            .select('*')
+            .or(filters)
+            .order('capturado_at', { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (fichaRes.error) throw fichaRes.error;
+    if (docsRes.error) throw docsRes.error;
+    return {
+      ficha: fichaRes.data ? mapEvaluacion({ ...fichaRes.data, client: null }) : null,
+      documentos: (docsRes.data ?? []).map(mapDocumento),
+    };
+  } catch (e) {
+    console.warn('[Supabase expediente]', e.message);
+    return emptyExpediente(e.message);
+  }
+}
+
+export async function fetchEvaluaciones(limit = 100) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('fv_fichas_campo')
+    .select(`*, client:fv_clients(nombres, apellidos, dni, nombre_negocio, sector_negocio)`)
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn('[Supabase]', error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => mapEvaluacion(r));
+}
+
+function mapDocumento(row) {
+  return {
+    ...row,
+    tipo: row.tipo_documento || row.doc_type || 'Documento',
+    url: row.file_url || '',
+    estado: row.estado || row.status || 'pendiente',
+    es_nitido: row.es_nitido ?? row.is_sharp ?? false,
+    sharpness_score: row.sharpness_score || 0,
+    capturado_at: row.capturado_at || row.captured_at,
+  };
+}
+
+function emptyExpediente(error = null) {
+  return { ficha: null, documentos: [], error };
+}
+
+export async function fetchCobranza(limit = 100) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('fv_cartera_diaria')
+    .select('*')
+    .order('dias_mora', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn('[Supabase]', error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => mapCobranza(r));
+}
+
+export async function fetchReportesData() {
+  if (!supabase) return emptyReportes();
+  try {
+    const [kpisRes, carteraRes, solicitudesRes, visitasRes, buroRes] = await Promise.all([
+      supabase.from('v_dashboard_kpis').select('*').maybeSingle(),
+      supabase.from('fv_clients').select('estado, sector_negocio, deuda_total, dias_mora'),
+      supabase.from('solicitudes_credito').select('estado, monto, submitted_at'),
+      supabase.from('fv_visitas').select('estado_visita, fecha_visita'),
+      supabase.from('fv_buro').select('en_blacklist, calificacion_sbs, dias_mora'),
+    ]);
+    const firstError = [kpisRes, carteraRes, solicitudesRes, visitasRes, buroRes].find((res) => res.error)?.error;
+    if (firstError) throw firstError;
+    return buildReportesData({
+      kpis: kpisRes.data ?? getEmptyKpis(),
+      cartera: carteraRes.data ?? [],
+      solicitudes: solicitudesRes.data ?? [],
+      visitas: visitasRes.data ?? [],
+      buro: buroRes.data ?? [],
+    });
+  } catch (e) {
+    console.warn('[Supabase]', e.message);
+    return emptyReportes();
+  }
+}
 
 function buildUser(email, profile, authId) {
   const name = `${profile.nombres} ${profile.apellidos}`.trim();
@@ -145,35 +217,32 @@ function buildUser(email, profile, authId) {
 
 async function fetchAdvisorProfileByEmail(email) {
   const clean = email.trim().toLowerCase();
-  if (!clean) return null;
+  if (!clean || !supabase) return null;
 
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('asesores_negocio')
-        .select('nombres, apellidos, rol, nivel, activo, email')
-        .ilike('email', clean)
-        .maybeSingle();
-      if (!error && data && data.activo !== false) {
-        return {
-          nombres: data.nombres || '',
-          apellidos: data.apellidos || '',
-          rol: data.rol || 'asesor',
-          perfil: data.nivel || '',
-        };
-      }
-    } catch (e) {
-      console.warn('[Supabase] perfil asesor:', e.message);
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('nombres, apellidos, rol, activo, email')
+      .ilike('email', clean)
+      .in('rol', ['asesor', 'supervisor', 'admin'])
+      .maybeSingle();
+    if (!error && data && data.activo !== false) {
+      return {
+        nombres: data.nombres || '',
+        apellidos: data.apellidos || '',
+        rol: data.rol || 'asesor',
+        perfil: data.rol === 'supervisor' ? 'Supervisor de Crédito' : 'Oficial de Crédito',
+      };
     }
+  } catch (e) {
+    console.warn('[Supabase] perfil asesor:', e.message);
   }
 
-  return KNOWN_PROFILES[clean] || null;
+  return null;
 }
 
 function profileFromAuthUser(user) {
   const meta = user?.user_metadata || {};
-  const known = KNOWN_PROFILES[user?.email?.trim().toLowerCase()];
-  if (known) return known;
   const rol = meta.rol || 'asesor';
   const nombre = (meta.nombre || user?.email?.split('@')[0] || 'Usuario').trim();
   const parts = nombre.split(/\s+/);
@@ -181,23 +250,17 @@ function profileFromAuthUser(user) {
     nombres: parts[0] || nombre,
     apellidos: parts.slice(1).join(' ') || '',
     rol,
-    perfil: rol === 'supervisor' ? 'Supervisor de Crédito' : 'Oficial de Crédito',
+    perfil: rol === 'supervisor' ? 'Supervisor de Credito' : 'Oficial de Credito',
   };
 }
 
 export async function getSessionUser() {
-  if (!supabase) {
-    const raw = sessionStorage.getItem('fv_web_mock_user');
-    return raw ? JSON.parse(raw) : null;
-  }
+  if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   const session = data?.session;
   if (!session?.user?.email) return null;
   const profile = await fetchAdvisorProfileByEmail(session.user.email);
-  if (!profile) {
-    return buildUser(session.user.email, profileFromAuthUser(session.user), session.user.id);
-  }
-  return buildUser(session.user.email, profile, session.user.id);
+  return buildUser(session.user.email, profile ?? profileFromAuthUser(session.user), session.user.id);
 }
 
 export function subscribeAuthChanges(callback) {
@@ -208,117 +271,180 @@ export function subscribeAuthChanges(callback) {
       return;
     }
     const profile = await fetchAdvisorProfileByEmail(session.user.email);
-    callback(
-      profile
-        ? buildUser(session.user.email, profile, session.user.id)
-        : buildUser(session.user.email, profileFromAuthUser(session.user), session.user.id)
-    );
+    callback(buildUser(session.user.email, profile ?? profileFromAuthUser(session.user), session.user.id));
   });
   return () => data.subscription.unsubscribe();
 }
 
 export async function signInAdvisor(email, password) {
-  const cleanEmail = email.trim().toLowerCase();
-
   if (!supabase) {
-    if (
-      cleanEmail === 'supervisor@pichincha.com' &&
-      password === 'Docente2025!'
-    ) {
-      const user = buildUser(cleanEmail, KNOWN_PROFILES[cleanEmail], 'mock-supervisor');
-      sessionStorage.setItem('fv_web_mock_user', JSON.stringify(user));
-      return { ok: true, user };
-    }
-    if (cleanEmail === 'asesor@pichincha.com' && password === 'Docente2025!') {
-      const user = buildUser(cleanEmail, KNOWN_PROFILES[cleanEmail], 'mock-asesor');
-      sessionStorage.setItem('fv_web_mock_user', JSON.stringify(user));
-      return { ok: true, user };
-    }
-    return { ok: false, error: 'Credenciales inválidas (modo demo sin Supabase).' };
+    return { ok: false, error: 'Supabase no está configurado. Verifica las variables de entorno.' };
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: cleanEmail,
+    email: email.trim().toLowerCase(),
     password,
   });
+
   if (error) {
     const msg = error.message.toLowerCase().includes('invalid')
       ? 'Correo o contraseña incorrectos.'
       : error.message;
-    // Respaldo académico si Auth aún no tiene el usuario (sin ejecutar script 04)
-    if (
-      cleanEmail === 'asesor@pichincha.com' ||
-      cleanEmail === 'supervisor@pichincha.com'
-    ) {
-      if (password === 'Docente2025!' && KNOWN_PROFILES[cleanEmail]) {
-        const user = buildUser(cleanEmail, KNOWN_PROFILES[cleanEmail], `local-${cleanEmail}`);
-        sessionStorage.setItem('fv_web_mock_user', JSON.stringify(user));
-        return { ok: true, user, warning: 'Sesión local — ejecuta 04_auth_usuarios_demo.sql en Supabase.' };
-      }
-    }
     return { ok: false, error: msg };
   }
 
-  let profile = await fetchAdvisorProfileByEmail(data.user.email);
-  if (!profile) {
-    profile = profileFromAuthUser(data.user);
-  }
-
-  return { ok: true, user: buildUser(data.user.email, profile, data.user.id) };
+  const profile = await fetchAdvisorProfileByEmail(data.user.email);
+  return { ok: true, user: buildUser(data.user.email, profile ?? profileFromAuthUser(data.user), data.user.id) };
 }
 
 export async function signOutAdvisor() {
-  sessionStorage.removeItem('fv_web_mock_user');
   if (supabase) await supabase.auth.signOut();
 }
 
-// ─── MOCKS (sólo si no hay .env configurado) ─────────────────────────────────
-
-function getMockKpis() {
+// fv_clients → campos: nombres, apellidos, dni, nombre_negocio, sector_negocio,
+//              ingreso_mensual, score_transaccional, deuda_total, dias_mora, estado
+function mapCliente(row) {
   return {
-    visitas_pendientes: 2,
-    visitas_total_cartera: 4,
-    gestionadas_hoy: 4,
-    monto_cartera: 31700,
-    solicitudes_aprobadas: 1,
-    solicitudes_mes: 4,
+    ...row,
+    name: `${row.nombres || ''} ${row.apellidos || ''}`.trim(),
+    dni: row.dni,
+    business_name: row.nombre_negocio || '',
+    credit_score: row.score_transaccional || 0,
+    total_debt: row.deuda_total || 0,
+    amount: row.deuda_total || 0,
+    days_overdue: row.dias_mora || 0,
+    status: row.estado || 'activo',
+    segmento: scoreSegment(row.score_transaccional),
   };
 }
 
-function getMockCartera() {
-  return [
-    {
-      id: 'c1',
-      name: 'María Elena Vásquez',
-      dni: '1712345678',
-      business_name: 'Panadería La Espiga',
-      credit_score: 720,
-      total_debt: 3200,
-      days_overdue: 0,
-      status: 'active',
-    },
-    {
-      id: 'c2',
-      name: 'Patricia Gómez',
-      dni: '1799887766',
-      business_name: 'Farmacia Salud',
-      credit_score: 590,
-      total_debt: 12000,
-      days_overdue: 45,
-      status: 'active',
-    },
-  ];
+// solicitudes_credito → campos: client_name, client_dni, monto, plazo_meses,
+//                        tea, cuota_mensual, proposito, nombre_negocio, estado
+function mapSolicitud(row) {
+  return {
+    ...row,
+    client_name: row.client_name,
+    client_dni: row.client_dni,
+    business_name: row.nombre_negocio || '',
+    segment: scoreSegment(null),
+    amount: row.monto || 0,
+    term_months: row.plazo_meses || 0,
+    monthly_payment: row.cuota_mensual || 0,
+    status: row.estado,
+    destino_fondos: row.proposito,
+    submitted_at: row.submitted_at,
+  };
 }
 
-function getMockSolicitudes() {
-  return [
-    {
-      id: 'sol-001',
-      client_name: 'María Elena Vásquez',
-      client_dni: '1712345678',
-      amount: 8500,
-      term_months: 18,
-      status: 'enviado',
-    },
-  ];
+// fv_fichas_campo → campos: score_f1..f4, score_final, monto_propuesto,
+//                    cuota_estimada, completada, segmento_resultante
+//                    + join client: nombres, apellidos, dni, nombre_negocio
+function mapEvaluacion(row) {
+  const client = row.client || {};
+  return {
+    ...row,
+    client_name: `${client.nombres || ''} ${client.apellidos || ''}`.trim() || '—',
+    client_dni: client.dni || '',
+    business_name: client.nombre_negocio || '',
+    score_f1: row.score_f1 || 0,
+    score_f2: row.score_f2 || 0,
+    score_f3: row.score_f3 || 0,
+    score_f4: row.score_f4 || 0,
+    score_final: row.score_final || 0,
+    segment: scoreSegment(row.score_final),
+    monto_propuesto: row.monto_propuesto || 0,
+    cuota_estimada: row.cuota_estimada || 0,
+    completada: row.completada || false,
+    recomendacion: row.segmento_resultante || '',
+  };
+}
+
+// fv_cartera_diaria → campos: client_name, saldo_credito, dias_mora,
+//                      numero_credito, proposito, fecha_visita
+function mapCobranza(row) {
+  return {
+    ...row,
+    client_name: row.client_name,
+    client_dni: '',
+    business_name: row.proposito || '',
+    operation: row.numero_credito || '',
+    product_name: row.proposito || 'Crédito Caja ICA',
+    balance: row.saldo_credito || 0,
+    amount: row.saldo_credito || 0,
+    due_date: row.fecha_visita,
+    days_overdue: row.dias_mora || 0,
+    status: (row.dias_mora || 0) > 0 ? 'vencido' : 'vigente',
+  };
+}
+
+function scoreSegment(score) {
+  const s = Number(score || 0);
+  if (s >= 700) return 'PREMIER';
+  if (s >= 600) return 'ESTANDAR';
+  return 'BASICO';
+}
+
+function getEmptyKpis() {
+  return {
+    visitas_pendientes: 0,
+    visitas_total_cartera: 0,
+    gestionadas_hoy: 0,
+    monto_cartera: 0,
+    solicitudes_aprobadas: 0,
+    solicitudes_mes: 0,
+  };
+}
+
+function countBy(rows, key) {
+  return rows.reduce((acc, row) => {
+    const value = row[key] || 'Sin dato';
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function sum(rows, key) {
+  return rows.reduce((acc, row) => acc + Number(row[key] || 0), 0);
+}
+
+function average(values) {
+  const nums = values.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  if (!nums.length) return 0;
+  return nums.reduce((acc, n) => acc + n, 0) / nums.length;
+}
+
+function isToday(value) {
+  if (!value) return false;
+  const d = new Date(value);
+  const today = new Date();
+  return d.toDateString() === today.toDateString();
+}
+
+function buildReportesData({ kpis, cartera, solicitudes, visitas, buro }) {
+  return {
+    kpis,
+    carteraTotal: cartera.length,
+    montoHipotesis: sum(cartera, 'deuda_total'),
+    solicitudesTotal: solicitudes.length,
+    solicitudesMonto: sum(solicitudes, 'monto'),
+    evaluacionesCompletadas: solicitudes.filter((r) =>
+      ['aprobado', 'rechazado', 'desembolsado'].includes((r.estado || '').toLowerCase())
+    ).length,
+    scorePromedio: average(buro.map((r) => r.calificacion_sbs)),
+    visitasHoy: visitas.filter((r) => isToday(r.fecha_visita)).length,
+    buroTotal: buro.length,
+    estadoCartera: countBy(cartera, 'estado'),
+    segmentoCartera: countBy(cartera.map((r) => ({ segmento: r.sector_negocio || 'Sin sector' })), 'segmento'),
+    estadoSolicitudes: countBy(solicitudes, 'estado'),
+  };
+}
+
+function emptyReportes() {
+  return buildReportesData({
+    kpis: getEmptyKpis(),
+    cartera: [],
+    solicitudes: [],
+    visitas: [],
+    buro: [],
+  });
 }

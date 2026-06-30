@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const SUPERVISOR_EMAIL = 'supervisor@pichincha.com';
-const SUPERVISOR_PASS = 'Docente2025!';
-
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
@@ -33,20 +30,18 @@ export default function LoginPage() {
   };
 
   const fillSupervisor = () => {
-    setEmail(SUPERVISOR_EMAIL);
-    setPassword(SUPERVISOR_PASS);
+    setEmail('supervisor@cajaica.com');
+    setPassword('Docente2025!');
   };
-
-  const displayError = localError;
 
   return (
     <div className="login-page">
       <div className="login-card">
         <div className="login-card__brand">
-          <div className="login-card__logo">BP</div>
+          <img src="/logo.png" alt="Caja Ica" className="login-card__mark" />
           <div>
-            <h1>Fuerza de Ventas Web</h1>
-            <p>Banco Pichincha · Panel supervisor</p>
+            <h1>Caja Ica Ventas</h1>
+            <p>Panel supervisor de fuerza de ventas</p>
           </div>
         </div>
 
@@ -57,7 +52,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="supervisor@pichincha.com"
+              placeholder="supervisor@cajaica.com"
               required
               autoComplete="username"
             />
@@ -74,24 +69,21 @@ export default function LoginPage() {
             />
           </label>
 
-          {displayError && <div className="login-form__error">{displayError}</div>}
+          {localError && <div className="login-form__error">{localError}</div>}
 
           <button type="submit" className="login-form__submit" disabled={busy}>
-            {busy ? 'Ingresando…' : 'Ingresar como supervisor'}
+            {busy ? 'Ingresando...' : 'Ingresar al panel'}
           </button>
 
           <button type="button" className="login-form__secondary" onClick={fillSupervisor}>
-            Rellenar credenciales demo
+            Usar credenciales demo
           </button>
         </form>
 
         <div className="login-card__hint">
-          <strong>Supervisor (web)</strong>
-          <span>{SUPERVISOR_EMAIL}</span>
-          <span>{SUPERVISOR_PASS}</span>
-          <p className="login-card__note">
-            Usuario creado en Supabase Auth + script <code>03_usuarios_demo_docente.sql</code>
-          </p>
+          <strong>Acceso supervisor</strong>
+          <span>supervisor@cajaica.com</span>
+          <span>Docente2025!</span>
         </div>
       </div>
     </div>

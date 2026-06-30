@@ -17,19 +17,17 @@ export default function Layout() {
     <div className="app-shell">
       {!isSupabaseConfigured && (
         <div className="banner-config">
-          Modo demo — Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env y ejecuta los
+          Modo demo: configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env y ejecuta los
           scripts SQL en Supabase
         </div>
       )}
 
       <header className="top-bar">
         <div className="top-bar__brand">
-          <div className="top-bar__logo">BP</div>
+          <img src="/logo.png" alt="Caja Ica" className="top-bar__brand-mark" />
           <div>
-            <div>Banco Pichincha</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 500, opacity: 0.85 }}>
-              CORE FINANCIERO · Fuerza de Ventas
-            </div>
+            <div>Caja Ica</div>
+            <div className="top-bar__brand-subtitle">Fuerza de ventas institucional</div>
           </div>
         </div>
         <LiveClock />
@@ -38,7 +36,7 @@ export default function Layout() {
           <div className="top-bar__user-info">
             <div className="top-bar__user-name">{user?.name ?? 'Usuario'}</div>
             <div className="top-bar__user-role">
-              {user?.role ?? '—'}
+              {user?.role ?? '-'}
               {!puedeAprobar && ' · sin permiso de aprobación'}
             </div>
           </div>

@@ -1,4 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#FFD100"/>
-  <text x="16" y="22" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#003DA5">BP</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#FFFFFF"/>
+  <path d="M4 12C14 4 26 3 38 4L7 22C3 20 2 17 4 12Z" fill="#E30613"/>
+  <path d="M56 50C46 58 34 61 18 60L57 40C62 42 63 46 56 50Z" fill="#E30613"/>
+  <circle cx="32" cy="17" r="5" fill="#E30613"/>
+  <rect x="19" y="27" width="26" height="18" rx="4" fill="#E30613"/>
+  <rect x="24" y="32" width="16" height="6" rx="2" fill="#FFFFFF"/>
+  <path d="M21 50H44" stroke="#E30613" stroke-width="4" stroke-linecap="round"/>
 </svg>
