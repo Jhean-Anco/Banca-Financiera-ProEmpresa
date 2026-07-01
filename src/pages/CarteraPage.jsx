@@ -4,7 +4,7 @@ import { fetchCartera } from '../lib/supabase';
 
 function MoraBadge({ dias }) {
   const d = Number(dias || 0);
-  const color = d === 0 ? '#0F8A5F' : d <= 30 ? '#C88D00' : '#B40012';
+  const color = d === 0 ? '#21A635' : d <= 30 ? '#71A621' : '#F2CC0C';
   const label = d === 0 ? 'Al día' : `${d} días`;
   return (
     <span
@@ -54,7 +54,7 @@ export default function CarteraPage() {
   return (
     <>
       <div className="page-header">
-        <h2>Cartera Caja Ica</h2>
+        <h2>Cartera Financiera ProEmpresa</h2>
         <p style={{ color: 'var(--bp-gris-medio)', marginTop: 4 }}>
           Clientes asignados a la fuerza de ventas y sincronizados con la app de campo.
         </p>

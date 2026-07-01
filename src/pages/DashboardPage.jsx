@@ -27,7 +27,7 @@ export default function DashboardPage() {
     <>
       <div className="page-greeting">
         <h1>Hola, {user.name.split(' ')[0]}</h1>
-        <p>Resumen operativo de Caja Ica para la jornada comercial.</p>
+        <p>Resumen operativo de Financiera ProEmpresa para la jornada comercial.</p>
       </div>
 
       <div className="kpi-grid">

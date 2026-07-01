@@ -24,9 +24,9 @@ export default function Layout() {
 
       <header className="top-bar">
         <div className="top-bar__brand">
-          <img src="/logo.png" alt="Caja Ica" className="top-bar__brand-mark" />
+          <img src="/logo.png" alt="Financiera ProEmpresa" className="top-bar__brand-mark" />
           <div>
-            <div>Caja Ica</div>
+            <div>Financiera ProEmpresa</div>
             <div className="top-bar__brand-subtitle">Fuerza de ventas institucional</div>
           </div>
         </div>

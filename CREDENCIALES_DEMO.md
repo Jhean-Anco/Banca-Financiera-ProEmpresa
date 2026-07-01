@@ -1,4 +1,4 @@
-# Credenciales demo - Caja ICA
+# Credenciales demo - Financiera ProEmpresa
 
 ## SQL unico
 
@@ -16,12 +16,12 @@ Todos usan la contrasena `Docente2025!`.
 
 | Aplicacion | Rol | Usuario | Documento |
 | --- | --- | --- | --- |
-| App Cliente | Cliente | `cliente@cajaica.com` | `72345678` |
-| App Cliente | Cliente | `cliente2@cajaica.com` | `73456789` |
-| App trabajador | Asesor | `asesor@cajaica.com` | - |
-| App trabajador | Asesor | `asesor2@cajaica.com` | - |
-| Web administrador | Supervisor | `supervisor@cajaica.com` | - |
-| Web administrador | Admin | `admin@cajaica.com` | - |
+| App Cliente | Cliente | `cliente@proempresa.com` | `72345678` |
+| App Cliente | Cliente | `cliente2@proempresa.com` | `73456789` |
+| App trabajador | Asesor | `asesor@proempresa.com` | - |
+| App trabajador | Asesor | `asesor2@proempresa.com` | - |
+| Web administrador | Supervisor | `supervisor@proempresa.com` | - |
+| Web administrador | Admin | `admin@proempresa.com` | - |
 
 ## Flujo demo
 

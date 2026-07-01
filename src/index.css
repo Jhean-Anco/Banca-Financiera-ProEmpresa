@@ -1,15 +1,15 @@
 :root {
-  --bp-azul: #e30613;
-  --bp-azul-medio: #b40012;
-  --bp-amarillo: #f2b705;
-  --bp-amarillo-oscuro: #c88d00;
-  --bp-blanco: #ffffff;
-  --bp-gris-claro: #f7f8fa;
+  --bp-azul: #038c33;
+  --bp-azul-medio: #21a635;
+  --bp-amarillo: #f2cc0c;
+  --bp-amarillo-oscuro: #d5ad00;
+  --bp-blanco: #f2f2f2;
+  --bp-gris-claro: #f2f2f2;
   --bp-gris-medio: #7a8494;
   --bp-gris-oscuro: #334155;
   --bp-negro: #1b2430;
-  --bp-rojo-suave: #fdecee;
-  --bp-linea: rgba(179, 0, 18, 0.1);
+  --bp-rojo-suave: #e8f7ea;
+  --bp-linea: rgba(3, 140, 51, 0.14);
   --bp-sombra: 0 8px 28px rgba(27, 36, 48, 0.07);
   --bp-radio: 10px;
   --font: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -26,7 +26,7 @@
 body {
   font-family: var(--font);
   background:
-    linear-gradient(180deg, rgba(227, 6, 19, 0.045), rgba(247, 248, 250, 0) 260px),
+    linear-gradient(180deg, rgba(3, 140, 51, 0.055), rgba(242, 242, 242, 0) 260px),
     var(--bp-gris-claro);
   color: var(--bp-negro);
   min-height: 100vh;
@@ -57,14 +57,14 @@ button {
 }
 
 .top-bar {
-  background: linear-gradient(135deg, #e30613 0%, #c70013 48%, #8f0010 100%);
+  background: linear-gradient(135deg, #038c33 0%, #21a635 52%, #318f45 100%);
   color: var(--bp-blanco);
   padding: 0 2rem;
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 16px rgba(179, 0, 18, 0.25);
+  box-shadow: 0 2px 16px rgba(3, 140, 51, 0.25);
 }
 
 .top-bar__brand {
@@ -77,7 +77,7 @@ button {
 }
 
 .top-bar__brand-mark {
-  width: 44px;
+  width: 132px;
   height: 44px;
   border-radius: 10px;
   object-fit: contain;
@@ -192,7 +192,7 @@ button {
 .nav-bar__link--active {
   color: var(--bp-azul);
   border-bottom-color: var(--bp-amarillo);
-  background: linear-gradient(180deg, rgba(227, 6, 19, 0.04), rgba(227, 6, 19, 0));
+  background: linear-gradient(180deg, rgba(3, 140, 51, 0.06), rgba(3, 140, 51, 0));
 }
 
 .main-content {
@@ -243,7 +243,7 @@ button {
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 34px rgba(179, 0, 18, 0.12);
+  box-shadow: 0 12px 34px rgba(3, 140, 51, 0.12);
 }
 
 .kpi-card__header {
@@ -346,7 +346,7 @@ button {
 }
 
 .field:focus {
-  outline: 3px solid rgba(227, 6, 19, 0.16);
+  outline: 3px solid rgba(3, 140, 51, 0.16);
   border-color: var(--bp-azul);
 }
 
@@ -390,8 +390,8 @@ button {
 
 .quick-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(179, 0, 18, 0.12);
-  border-color: rgba(227, 6, 19, 0.22);
+  box-shadow: 0 10px 30px rgba(3, 140, 51, 0.12);
+  border-color: rgba(3, 140, 51, 0.22);
 }
 
 .quick-card__icon {
@@ -458,7 +458,7 @@ button {
 }
 
 .data-table tr:hover td {
-  background: rgba(227, 6, 19, 0.035);
+  background: rgba(3, 140, 51, 0.045);
 }
 
 .badge {
@@ -563,7 +563,7 @@ button {
 }
 
 .banner-config {
-  background: linear-gradient(90deg, var(--bp-amarillo) 0%, #ffe566 100%);
+  background: linear-gradient(90deg, var(--bp-amarillo) 0%, #fff07a 100%);
   color: var(--bp-azul);
   padding: 10px 2rem;
   font-size: 0.85rem;
@@ -590,7 +590,7 @@ button {
   padding: 2rem;
   background:
     radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.2), transparent 28%),
-    linear-gradient(135deg, #e30613 0%, #b40012 52%, #7d000d 100%);
+    linear-gradient(135deg, #038c33 0%, #21a635 52%, #318f45 100%);
 }
 
 .login-page__loading {
@@ -608,7 +608,7 @@ button {
 }
 
 .login-card__mark {
-  width: 58px;
+  width: 172px;
   height: 58px;
   border-radius: 14px;
   object-fit: contain;
@@ -666,7 +666,7 @@ button {
 }
 
 .login-form input:focus {
-  outline: 3px solid rgba(227, 6, 19, 0.16);
+  outline: 3px solid rgba(3, 140, 51, 0.16);
   border-color: var(--bp-azul);
 }
 

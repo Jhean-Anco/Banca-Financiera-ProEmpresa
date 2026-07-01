@@ -30,7 +30,7 @@ export default function LoginPage() {
   };
 
   const fillSupervisor = () => {
-    setEmail('supervisor@cajaica.com');
+    setEmail('supervisor@proempresa.com');
     setPassword('Docente2025!');
   };
 
@@ -38,9 +38,9 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card__brand">
-          <img src="/logo.png" alt="Caja Ica" className="login-card__mark" />
+          <img src="/logo.png" alt="Financiera ProEmpresa" className="login-card__mark" />
           <div>
-            <h1>Caja Ica Ventas</h1>
+            <h1>ProEmpresa Ventas</h1>
             <p>Panel supervisor de fuerza de ventas</p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="supervisor@cajaica.com"
+              placeholder="supervisor@proempresa.com"
               required
               autoComplete="username"
             />
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
         <div className="login-card__hint">
           <strong>Acceso supervisor</strong>
-          <span>supervisor@cajaica.com</span>
+          <span>supervisor@proempresa.com</span>
           <span>Docente2025!</span>
         </div>
       </div>

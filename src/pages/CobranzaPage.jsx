@@ -90,8 +90,8 @@ export default function CobranzaPage() {
                     <span
                       className="badge"
                       style={{
-                        background: r.days_overdue > 0 ? '#FDECEE' : '#DCFCE7',
-                        color: r.days_overdue > 0 ? '#B40012' : '#166534',
+                        background: r.days_overdue > 0 ? '#FFF6BF' : '#E8F7EA',
+                        color: r.days_overdue > 0 ? '#318F45' : '#038C33',
                       }}
                     >
                       {r.days_overdue}

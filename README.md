@@ -1,4 +1,4 @@
-# Caja ICA - Web Administrador
+# Financiera ProEmpresa - Web Administrador
 
 Dashboard web conectado al mismo Supabase que la app cliente y la app del
 trabajador de campo.
@@ -22,8 +22,8 @@ consolidados.
 
 | Rol | Email | Contrasena |
 | --- | --- | --- |
-| Supervisor | `supervisor@cajaica.com` | `Docente2025!` |
-| Admin | `admin@cajaica.com` | `Docente2025!` |
+| Supervisor | `supervisor@proempresa.com` | `Docente2025!` |
+| Admin | `admin@proempresa.com` | `Docente2025!` |
 
 ## Flujo
 

@@ -84,7 +84,7 @@ export default function SolicitudesPage() {
   return (
     <>
       <div className="page-header">
-        <h2>Solicitudes Caja Ica</h2>
+        <h2>Solicitudes Financiera ProEmpresa</h2>
         <p style={{ color: 'var(--bp-gris-medio)', marginTop: 4 }}>
           Primero se reciben en web, luego se asignan al asesor y finalmente se revisa el expediente de campo.
         </p>
@@ -117,7 +117,7 @@ export default function SolicitudesPage() {
       {toast && (
         <div
           style={{
-            background: '#0F8A5F',
+            background: '#21A635',
             color: '#fff',
             padding: '10px 16px',
             borderRadius: 10,
@@ -206,7 +206,7 @@ export default function SolicitudesPage() {
                                 type="button"
                                 disabled={busyId === r.id}
                                 onClick={() => cambiarEstado(r.id, 'aprobado')}
-                                style={btnStyle('#0F8A5F')}
+                                style={btnStyle('#21A635')}
                               >
                                 {busyId === r.id ? '...' : 'Aprobar'}
                               </button>
@@ -214,7 +214,7 @@ export default function SolicitudesPage() {
                                 type="button"
                                 disabled={busyId === r.id}
                                 onClick={() => cambiarEstado(r.id, 'rechazado')}
-                                style={btnStyle('#B40012')}
+                                style={btnStyle('#318F45')}
                               >
                                 Rechazar
                               </button>
@@ -258,16 +258,59 @@ function ExpedienteSolicitud({ data, asesor }) {
   }
 
   const ficha = data.ficha;
+  const sol = data.solicitud || {};
   const docs = data.documentos || [];
   const obligatorios = ['dniAnverso', 'dniReverso', 'fotoNegocio', 'fotoAsesorCliente'];
   const completos = obligatorios.filter((tipo) => docs.some((d) => d.tipo === tipo)).length;
 
+  const tipoNombre = sol.tipo_credito_nombre || sol.tipo_credito || '-';
+  const teaMin = sol.tipo_tea_min;
+  const teaMax = sol.tipo_tea_max;
+  const teaRango = (teaMin != null && teaMax != null)
+    ? `${Number(teaMin).toFixed(0)}% – ${Number(teaMax).toFixed(0)}%`
+    : null;
+  const teaUsada = sol.tea ? `${Number(sol.tea).toFixed(2)}%` : '-';
+  const tceaVal = sol.tcea ?? sol.tipo_tcea;
+  const tceaStr = tceaVal == null ? '-' : `${Number(tceaVal).toFixed(2)}%`;
+
   return (
     <div className="expediente-panel">
+      {/* ── Condiciones del crédito ── */}
+      <div className="expediente-section">
+        <h3>Condiciones del crédito</h3>
+        <div className="expediente-kpis">
+          <MiniDato label="Tipo de crédito" value={tipoNombre} />
+          {teaRango && <MiniDato label="Rango TEA" value={teaRango} />}
+          <MiniDato label="TEA" value={teaUsada} />
+          <MiniDato label="TCEA" value={tceaStr} />
+          <MiniDato label="Monto" value={sol.monto ? formatMoney(sol.monto) : '-'} />
+          <MiniDato label="Plazo" value={sol.plazo_meses ? `${sol.plazo_meses} meses` : '-'} />
+          <MiniDato label="Cuota mensual" value={sol.cuota_mensual ? formatMoney(sol.cuota_mensual) : '-'} />
+          <MiniDato label="Interés total" value={sol.total_interes ? formatMoney(sol.total_interes) : '-'} />
+          <MiniDato label="Total a pagar" value={sol.monto_total ? formatMoney(sol.monto_total) : '-'} />
+          <MiniDato label="Firma digital" value={sol.tiene_firma ? '✔ Adjunta' : '✗ Pendiente'} />
+        </div>
+      </div>
+
+      {/* ── Datos del negocio ── */}
+      {(sol.nombre_negocio || sol.sector_negocio || sol.direccion_negocio) && (
+        <div className="expediente-section">
+          <h3>Negocio del cliente</h3>
+          <div className="expediente-kpis">
+            {sol.nombre_negocio && <MiniDato label="Negocio" value={sol.nombre_negocio} />}
+            {sol.sector_negocio && <MiniDato label="Rubro" value={sol.sector_negocio} />}
+            {sol.direccion_negocio && <MiniDato label="Dirección" value={sol.direccion_negocio} />}
+            {sol.ingreso_mensual && <MiniDato label="Ingreso mensual" value={formatMoney(sol.ingreso_mensual)} />}
+            {sol.antiguedad_negocio != null && <MiniDato label="Antigüedad" value={`${sol.antiguedad_negocio} años`} />}
+          </div>
+        </div>
+      )}
+
+      {/* ── Expediente de campo ── */}
       <div className="expediente-section">
         <h3>Expediente levantado por asesor</h3>
         <div className="expediente-kpis">
-          <MiniDato label="Asesor" value={asesor?.nombre || 'No asignado'} />
+          <MiniDato label="Asesor" value={asesor?.nombre || sol.asesor_nombre || 'No asignado'} />
           <MiniDato label="Ficha de campo" value={ficha?.completada ? 'Completa' : 'Pendiente'} />
           <MiniDato label="Documentos clave" value={`${completos}/${obligatorios.length}`} />
           <MiniDato label="Score final" value={ficha?.score_final ? Number(ficha.score_final).toFixed(0) : '-'} />
@@ -275,6 +318,8 @@ function ExpedienteSolicitud({ data, asesor }) {
           <MiniDato label="Cuota estimada" value={ficha?.cuota_estimada ? formatMoney(ficha.cuota_estimada) : '-'} />
         </div>
       </div>
+
+      {/* ── Documentos y fotografías ── */}
       <div className="expediente-section">
         <h3>Documentos y fotografias</h3>
         {docs.length === 0 ? (

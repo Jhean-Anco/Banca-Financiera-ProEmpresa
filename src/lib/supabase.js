@@ -40,13 +40,19 @@ export async function fetchCartera(limit = 100) {
 export async function fetchSolicitudes(limit = 100) {
   if (!supabase) return [];
   const { data, error } = await supabase
-    .from('solicitudes_credito')
+    .from('v_solicitudes_completas')
     .select('*')
     .order('submitted_at', { ascending: false })
     .limit(limit);
   if (error) {
-    console.warn('[Supabase]', error.message);
-    return [];
+    // Fallback a la tabla directa si la vista aún no existe en la BD
+    const { data: raw, error: err2 } = await supabase
+      .from('solicitudes_credito')
+      .select('*')
+      .order('submitted_at', { ascending: false })
+      .limit(limit);
+    if (err2) { console.warn('[Supabase]', err2.message); return []; }
+    return (raw ?? []).map((r) => mapSolicitud(r));
   }
   return (data ?? []).map((r) => mapSolicitud(r));
 }
@@ -101,7 +107,7 @@ export async function fetchExpedienteSolicitud(solicitud) {
   ].filter(Boolean).join(',');
 
   try {
-    const [fichaRes, docsRes] = await Promise.all([
+    const [fichaRes, docsRes, solRes] = await Promise.all([
       supabase
         .from('fv_fichas_campo')
         .select('*')
@@ -114,12 +120,18 @@ export async function fetchExpedienteSolicitud(solicitud) {
             .or(filters)
             .order('capturado_at', { ascending: false })
         : Promise.resolve({ data: [], error: null }),
+      supabase
+        .from('v_solicitudes_completas')
+        .select('*')
+        .eq('id', solicitud.id)
+        .maybeSingle(),
     ]);
     if (fichaRes.error) throw fichaRes.error;
     if (docsRes.error) throw docsRes.error;
     return {
       ficha: fichaRes.data ? mapEvaluacion({ ...fichaRes.data, client: null }) : null,
       documentos: (docsRes.data ?? []).map(mapDocumento),
+      solicitud: solRes.data ?? solicitud,
     };
   } catch (e) {
     console.warn('[Supabase expediente]', e.message);
@@ -368,7 +380,7 @@ function mapCobranza(row) {
     client_dni: '',
     business_name: row.proposito || '',
     operation: row.numero_credito || '',
-    product_name: row.proposito || 'Crédito Caja ICA',
+    product_name: row.proposito || 'Crédito Financiera ProEmpresa',
     balance: row.saldo_credito || 0,
     amount: row.saldo_credito || 0,
     due_date: row.fecha_visita,
